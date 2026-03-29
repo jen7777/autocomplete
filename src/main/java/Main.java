@@ -23,6 +23,9 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
 
+        DataImporter.importTextFile("C:/Users/jenso/Downloads/dataset.txt");
+        System.out.println("Import ran");
+
         Label title = new Label("Welcome");
         title.setStyle("-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;");
 
@@ -84,12 +87,14 @@ public class Main extends Application {
                 new Label("Output:"),
                 outputArea,
                 statusLabel
+
         );
+
 
         layout.setPadding(new Insets(20));
         layout.setStyle(
                 "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);" +
-                        "-fx-background-radius: 15;"
+                        "-fx-background-radius: white;"
         );
 
         Scene scene = new Scene(layout, 600, 550);
