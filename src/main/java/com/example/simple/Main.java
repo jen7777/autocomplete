@@ -23,7 +23,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
 
-        DataImporter.importTextFile("C:/Users/jenso/Downloads/dataset.txt");
+        DataImporter.importTextFile("C:/Users/jenso/Desktop/dataset.txt");
         System.out.println("Import ran");
 
         Label title = new Label("Welcome");
