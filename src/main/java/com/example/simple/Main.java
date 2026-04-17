@@ -6,11 +6,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.sql.*;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main extends Application {
@@ -23,177 +22,142 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
 
-        DataImporter.importTextFile("C:/Users/jenso/Desktop/dataset.txt");
-        System.out.println("Import ran");
+        // ❌ KEEP THIS COMMENTED after DB import
+        // DataImporter.importTextFile("/Users/jenso/Desktop/dataset.txt");
 
         Label title = new Label("Welcome");
-        title.setStyle("-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;");
+        title.setStyle(
+                "-fx-text-fill: white;" +
+                        "-fx-font-size: 22px;" +
+                        "-fx-font-weight: bold;"
+        );
 
-        // ✅ UPDATED INPUT FIELD (mid → dark blue)
         inputField = new TextField();
         inputField.setPromptText("Type a word");
         inputField.setStyle(
                 "-fx-font-size: 15px;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-padding: 8;" +
+                        "-fx-background-radius: 20px;" +
+                        "-fx-padding: 12px;" +
                         "-fx-background-color: linear-gradient(to right, #2c5364, #203a43);" +
                         "-fx-text-fill: white;" +
                         "-fx-prompt-text-fill: #bbbbbb;" +
                         "-fx-border-color: #1e90ff;" +
-                        "-fx-border-radius: 10;"
+                        "-fx-border-radius: 20px;"
         );
 
-        Button suggestBtn = new Button("Autocomplete Word");
+        Button autoCompleteBtn = new Button("Autocomplete Word");
         Button generateBtn = new Button("Generate Sentence");
 
+        String buttonStyle =
+                "-fx-background-color: linear-gradient(to right, #1e90ff, #00bfff);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-font-size: 14px;" +
+                        "-fx-padding: 10px 20px;" +
+                        "-fx-background-radius: 20px;";
 
-        suggestBtn.setStyle(buttonStyle());
-        generateBtn.setStyle(buttonStyle());
+        autoCompleteBtn.setStyle(buttonStyle);
+        generateBtn.setStyle(buttonStyle);
 
-        HBox buttons = new HBox(10, suggestBtn, generateBtn);
-        buttons.setAlignment(Pos.CENTER);
-
-
-        // ✅ Styled ListView
         suggestionList = new ListView<>();
         suggestionList.setPrefHeight(150);
         suggestionList.setStyle(
-                "-fx-control-inner-background: #203a43;" +
-                        "-fx-background-radius: 10;" +
+                "-fx-background-color: #1b3c44;" +
+                        "-fx-control-inner-background: #1b3c44;" +
                         "-fx-text-fill: white;"
         );
 
-        // ✅ Styled Output Area
         outputArea = new TextArea();
         outputArea.setEditable(false);
         outputArea.setWrapText(true);
         outputArea.setPrefHeight(150);
         outputArea.setStyle(
-                "-fx-control-inner-background: #203a43;" +
-                        "-fx-text-fill: white;" +
-                        "-fx-background-radius: 10;"
+                "-fx-control-inner-background: #1b3c44;" +
+                        "-fx-text-fill: white;"
         );
 
-        statusLabel = new Label("Ready");
+        Label suggestionLabel = new Label("Suggestions:");
+        suggestionLabel.setStyle("-fx-text-fill: #ff6f61;");
+
+        Label outputLabel = new Label("Output:");
+        outputLabel.setStyle("-fx-text-fill: #ff6f61;");
+
+        statusLabel = new Label("Suggestions loaded");
         statusLabel.setStyle("-fx-text-fill: lightgray;");
 
-        VBox layout = new VBox(
-                15,
-                title,
-                inputField,
-                buttons,
-                new Label("Suggestions:"),
-                suggestionList,
-                new Label("Output:"),
-                outputArea,
-                statusLabel
+        // ✅ Button Actions
+        autoCompleteBtn.setOnAction(e -> fetchSuggestions());
+        inputField.setOnAction(e -> fetchSuggestions());
 
-        );
-
-
-        layout.setPadding(new Insets(20));
-        layout.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);" +
-                        "-fx-background-radius: white;"
-        );
-
-        Scene scene = new Scene(layout, 600, 550);
-
-        // Actions
-        suggestBtn.setOnAction(e -> getSuggestions());
         generateBtn.setOnAction(e -> generateSentence());
 
-        suggestionList.setOnMouseClicked(e -> {
-            String selected = suggestionList.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                String word = selected.split(" \\(")[0];
-                inputField.setText(word);
-                getSuggestions();
-            }
-        });
+        VBox layout = new VBox(15,
+                title,
+                inputField,
+                autoCompleteBtn,
+                generateBtn,
+                suggestionLabel,
+                suggestionList,
+                outputLabel,
+                outputArea,
+                statusLabel
+        );
 
-        stage.setTitle("Sentence Builder");
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.TOP_CENTER);
+        layout.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
+        );
+
+        Scene scene = new Scene(layout, 500, 600);
         stage.setScene(scene);
+        stage.setTitle("Sentence Builder");
         stage.show();
-
-        testConnection();
     }
 
-    private String buttonStyle() {
-        return "-fx-background-color: #1e90ff;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-size: 14px;" +
-                "-fx-font-weight: bold;" +
-                "-fx-background-radius: 10;";
-    }
+    // ✅ Fetch suggestions from DB
+    private void fetchSuggestions() {
+        String input = inputField.getText().trim();
 
-    private void testConnection() {
-        try (Connection conn = DBConnection.getConnection()) {
-            if (conn != null) {
-                statusLabel.setText("Connected to database");
-            }
-        } catch (Exception e) {
-            statusLabel.setText("DB Error");
-        }
-    }
-
-    private void getSuggestions() {
-        String word = inputField.getText().trim().toLowerCase();
-
-        if (word.isEmpty()) {
+        if (input.isEmpty()) {
             statusLabel.setText("Enter a word");
             return;
         }
 
-        String query = """
-                SELECT w2.word_text, wf.follow_count
-                FROM word_follows wf
-                JOIN word w1 ON wf.word_id = w1.id
-                JOIN word w2 ON wf.next_word_id = w2.id
-                WHERE w1.word_text = ?
-                ORDER BY wf.follow_count DESC
-                LIMIT 5
-                """;
+        String result = DBHelper.getSuggestions(input);
 
-        List<String> results = new ArrayList<>();
+        List<String> items = Arrays.asList(result.split("\n"));
+        suggestionList.setItems(FXCollections.observableArrayList(items));
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setString(1, word);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                results.add(rs.getString("word_text") +
-                        " (" + rs.getInt("follow_count") + ")");
-            }
-
-            suggestionList.setItems(FXCollections.observableArrayList(results));
-            statusLabel.setText("Suggestions loaded");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            statusLabel.setText("Error fetching suggestions");
-        }
+        statusLabel.setText("Suggestions loaded");
     }
 
+    // ✅ Generate sentence using DB (basic logic)
     private void generateSentence() {
-        try (Connection conn = DBConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("CALL sp_generate_bigram_sentence(10)")) {
+        String input = inputField.getText().trim();
 
-            if (rs.next()) {
-                outputArea.setText(rs.getString("generated_sentence"));
-                statusLabel.setText("Sentence generated");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            statusLabel.setText("Error generating sentence");
+        if (input.isEmpty()) {
+            statusLabel.setText("Enter a word");
+            return;
         }
+
+        StringBuilder sentence = new StringBuilder(input);
+
+        String currentWord = input;
+
+        for (int i = 0; i < 10; i++) {
+            String next = DBHelper.getTopNextWord(currentWord);
+
+            if (next == null || next.isEmpty()) break;
+
+            sentence.append(" ").append(next);
+            currentWord = next;
+        }
+
+        outputArea.setText(sentence.toString());
+        statusLabel.setText("Sentence generated");
     }
 
     public static void main(String[] args) {
-        launch(args);
+        launch();
     }
 }
