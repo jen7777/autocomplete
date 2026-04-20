@@ -37,7 +37,7 @@ public class DataImporter {
                 }
             }
 
-            System.out.println("✅ Data successfully inserted into MySQL!");
+            System.out.println(" Data successfully inserted into MySQL!");
 
         } catch (Exception e) {
             e.printStackTrace();
