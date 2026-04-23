@@ -22,7 +22,7 @@ public class Controller {
 
         System.out.println("Controller loaded"); // DEBUG
 
-        // 🔥 Debounce (prevents too many DB calls)
+        // Debounce (prevents too many DB calls)
         PauseTransition pause = new PauseTransition(Duration.millis(200));
 
         inputField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -32,7 +32,7 @@ public class Controller {
             pause.playFromStart();
         });
 
-        // 🔥 Click suggestion
+        // Click suggestion
         suggestionList.setOnMouseClicked(e -> {
             String selected = suggestionList.getSelectionModel().getSelectedItem();
 
@@ -56,7 +56,7 @@ public class Controller {
             if (!input.contains(" ")) {
                 results = SuggestionService.getPrefixSuggestions(input);
             }
-            // 🧠 Sentence → next-word prediction
+            // Sentence → next-word prediction
             else {
                 results = SuggestionService.getNextWordSuggestions(input);
             }

@@ -1,5 +1,6 @@
 package com.example.simple;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -8,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.util.List;
 
@@ -20,67 +22,106 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
 
-        Label title = new Label("Smart Autocomplete");
-        title.setStyle("-fx-text-fill: white; -fx-font-size: 22px; -fx-font-weight: bold;");
+        // Title
+        Label title = new Label("Autocomplete Word and Sentence generation");
+        title.setStyle(
+                "-fx-text-fill: #e6f1ff;" +
+                        "-fx-font-size: 24px;" +
+                        "-fx-font-weight: bold;"
+        );
 
+        //  Section Labels
+        Label inputLabel = new Label("Start typing");
+        Label suggestionLabel = new Label("Word suggestion");
+        Label outputLabel = new Label("Sentence generation");
+
+        String labelStyle =
+                "-fx-text-fill: #8892b0;" +
+                        "-fx-font-size: 12px;" +
+                        "-fx-font-weight: bold;";
+
+        inputLabel.setStyle(labelStyle);
+        suggestionLabel.setStyle(labelStyle);
+        outputLabel.setStyle(labelStyle);
+
+        // Input Field
         inputField = new TextField();
-        inputField.setPromptText("Start typing...");
+        inputField.setPromptText("Type here...");
         inputField.setStyle(
                 "-fx-font-size:16px;" +
-                        "-fx-padding:10;" +
-                        "-fx-background-radius:10;" +
-                        "-fx-border-radius:10;" +
-                        "-fx-background-color:#1b3c44;" +
-                        "-fx-text-fill:white;"
-        );
-
-        suggestionList = new ListView<>();
-        suggestionList.setPrefHeight(150);
-        suggestionList.setStyle(
-                "-fx-control-inner-background:#1b3c44;" +
-                        "-fx-text-fill:white;"
-        );
-
-        Button generateBtn = new Button("Generate Sentence");
-        generateBtn.setStyle(
-                "-fx-background-color:#1e90ff;" +
+                        "-fx-padding:12;" +
+                        "-fx-background-radius:12;" +
+                        "-fx-border-radius:12;" +
+                        "-fx-background-color:#112240;" +
                         "-fx-text-fill:white;" +
-                        "-fx-font-size:14px;" +
-                        "-fx-background-radius:10;"
+                        "-fx-border-color:#1e90ff;" +
+                        "-fx-border-width:1.5;"
         );
 
-        outputArea = new TextArea();
-        outputArea.setPromptText("Generated sentence...");
-        outputArea.setWrapText(true);
-        outputArea.setPrefHeight(120);
-        outputArea.setStyle(
-                "-fx-control-inner-background:#1b3c44;" +
+        //  Suggestion List
+        suggestionList = new ListView<>();
+        suggestionList.setPrefHeight(140);
+        suggestionList.setStyle(
+                "-fx-control-inner-background:#112240;" +
+                        "-fx-background-radius:12;" +
+                        "-fx-border-radius:12;" +
+                        "-fx-border-color:#1e90ff;" +
                         "-fx-text-fill:white;"
         );
 
-        // 🔥 REAL-TIME SUGGESTIONS
+        // Output Area
+        outputArea = new TextArea();
+        outputArea.setWrapText(true);
+        outputArea.setPrefHeight(130);
+        outputArea.setStyle(
+                "-fx-control-inner-background:#112240;" +
+                        "-fx-background-radius:12;" +
+                        "-fx-border-radius:12;" +
+                        "-fx-border-color:#1e90ff;" +
+                        "-fx-text-fill:white;"
+        );
+
+        //  Debounce typing
+        PauseTransition pause = new PauseTransition(Duration.millis(250));
+
         inputField.textProperty().addListener((obs, oldVal, newVal) -> {
 
             if (newVal == null || newVal.trim().isEmpty()) {
                 suggestionList.getItems().clear();
+                outputArea.clear();
                 return;
             }
 
-            new Thread(() -> {
-                List<String> results;
+            pause.setOnFinished(e -> {
 
-                if (newVal.contains(" ")) {
-                    results = SuggestionService.getNextWordSuggestions(newVal);
-                } else {
-                    results = SuggestionService.getPrefixSuggestions(newVal);
-                }
+                new Thread(() -> {
 
-                Platform.runLater(() -> suggestionList.getItems().setAll(results));
+                    List<String> results;
 
-            }).start();
+
+                    if (newVal.contains(" ")) {
+                        // sentence → next word prediction
+                        results = SuggestionService.getNextWordSuggestions(newVal);
+                    } else {
+                        // single word → prefix autocomplete
+                        results = SuggestionService.getPrefixSuggestions(newVal);
+                    }
+
+                    Platform.runLater(() ->
+                            suggestionList.getItems().setAll(results)
+                    );
+
+                }).start();
+
+                //  Sentence generation always runs
+                generateSentenceRealtime(newVal);
+
+            });
+
+            pause.playFromStart();
         });
 
-        // 🔥 CLICK SUGGESTION
+        // Click suggestion
         suggestionList.setOnMouseClicked(e -> {
             String selected = suggestionList.getSelectionModel().getSelectedItem();
 
@@ -97,39 +138,32 @@ public class Main extends Application {
             }
         });
 
-        // 🔥 SENTENCE GENERATION
-        generateBtn.setOnAction(e -> generateSentence());
-
-        VBox layout = new VBox(12,
+        // Layout
+        VBox layout = new VBox(10,
                 title,
+                inputLabel,
                 inputField,
+                suggestionLabel,
                 suggestionList,
-                generateBtn,
+                outputLabel,
                 outputArea
         );
 
         layout.setPadding(new Insets(20));
-        layout.setAlignment(Pos.TOP_CENTER);
+        layout.setAlignment(Pos.TOP_LEFT);
         layout.setStyle(
-                "-fx-background-color: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);"
+                "-fx-background-color: linear-gradient(to bottom, #020c1b, #0a192f, #112240);"
         );
 
-        Scene scene = new Scene(layout, 500, 550);
+        Scene scene = new Scene(layout, 520, 560);
 
-        stage.setTitle("Autocomplete + Sentence Generator");
+        stage.setTitle("Autocomplete AI");
         stage.setScene(scene);
         stage.show();
     }
 
-    // 🧠 SENTENCE GENERATION LOGIC
-    private void generateSentence() {
-
-        String input = inputField.getText();
-
-        if (input == null || input.trim().isEmpty()) {
-            outputArea.setText("Enter a word first");
-            return;
-        }
+    // Sentence generator
+    private void generateSentenceRealtime(String input) {
 
         new Thread(() -> {
 
@@ -138,7 +172,8 @@ public class Main extends Application {
 
             for (int i = 0; i < 10; i++) {
 
-                List<String> nextWords = SuggestionService.getNextWordSuggestions(currentWord);
+                List<String> nextWords =
+                        SuggestionService.getNextWordSuggestions(currentWord);
 
                 if (nextWords.isEmpty()) break;
 
@@ -148,7 +183,9 @@ public class Main extends Application {
                 currentWord = next;
             }
 
-            Platform.runLater(() -> outputArea.setText(sentence.toString()));
+            Platform.runLater(() ->
+                    outputArea.setText(sentence.toString())
+            );
 
         }).start();
     }

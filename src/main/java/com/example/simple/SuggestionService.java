@@ -13,7 +13,7 @@ public class SuggestionService {
     private static final String USER = "root";
     private static final String PASS = "Holybible";
 
-    // 🔤 PREFIX AUTOCOMPLETE
+    // PREFIX AUTOCOMPLETE
     public static List<String> getPrefixSuggestions(String input) {
         List<String> suggestions = new ArrayList<>();
 
@@ -37,7 +37,7 @@ public class SuggestionService {
         return suggestions;
     }
 
-    // 🧠 NEXT WORD PREDICTION
+    // NEXT WORD PREDICTION
     public static List<String> getNextWordSuggestions(String input) {
         List<String> suggestions = new ArrayList<>();
 
