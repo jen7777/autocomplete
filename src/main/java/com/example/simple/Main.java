@@ -22,7 +22,7 @@ public class Main extends Application {
     @Override
     public void start(Stage stage) {
 
-        // Title
+        // 🔷 Title
         Label title = new Label("Autocomplete Word and Sentence generation");
         title.setStyle(
                 "-fx-text-fill: #e6f1ff;" +
@@ -30,7 +30,7 @@ public class Main extends Application {
                         "-fx-font-weight: bold;"
         );
 
-        //  Section Labels
+        // 🔹 Section Labels
         Label inputLabel = new Label("Start typing");
         Label suggestionLabel = new Label("Word suggestion");
         Label outputLabel = new Label("Sentence generation");
@@ -44,7 +44,7 @@ public class Main extends Application {
         suggestionLabel.setStyle(labelStyle);
         outputLabel.setStyle(labelStyle);
 
-        // Input Field
+        // 🔤 Input Field
         inputField = new TextField();
         inputField.setPromptText("Type here...");
         inputField.setStyle(
@@ -58,7 +58,7 @@ public class Main extends Application {
                         "-fx-border-width:1.5;"
         );
 
-        //  Suggestion List
+        // 📋 Suggestion List
         suggestionList = new ListView<>();
         suggestionList.setPrefHeight(140);
         suggestionList.setStyle(
@@ -69,7 +69,7 @@ public class Main extends Application {
                         "-fx-text-fill:white;"
         );
 
-        // Output Area
+        // 🧠 Output Area
         outputArea = new TextArea();
         outputArea.setWrapText(true);
         outputArea.setPrefHeight(130);
@@ -81,7 +81,7 @@ public class Main extends Application {
                         "-fx-text-fill:white;"
         );
 
-        //  Debounce typing
+        // 🔥 Debounce typing
         PauseTransition pause = new PauseTransition(Duration.millis(250));
 
         inputField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -98,13 +98,21 @@ public class Main extends Application {
 
                     List<String> results;
 
+                    // 🔥 SMART LOGIC (FIXED)
+                    String[] words = newVal.trim().split("\\s+");
 
-                    if (newVal.contains(" ")) {
-                        // sentence → next word prediction
-                        results = SuggestionService.getNextWordSuggestions(newVal);
+                    if (words.length == 1) {
+                        // First word → prefix autocomplete
+                        results = SuggestionService.getPrefixSuggestions(words[0]);
                     } else {
-                        // single word → prefix autocomplete
-                        results = SuggestionService.getPrefixSuggestions(newVal);
+                        // Second (or more) word → context + prefix
+                        String previousWord = words[words.length - 2];
+                        String currentPrefix = words[words.length - 1];
+
+                        results = SuggestionService.getFilteredNextWordSuggestions(
+                                previousWord,
+                                currentPrefix
+                        );
                     }
 
                     Platform.runLater(() ->
@@ -113,7 +121,7 @@ public class Main extends Application {
 
                 }).start();
 
-                //  Sentence generation always runs
+                // 🧠 Sentence generation still runs
                 generateSentenceRealtime(newVal);
 
             });
@@ -121,7 +129,7 @@ public class Main extends Application {
             pause.playFromStart();
         });
 
-        // Click suggestion
+        // 🔥 Click suggestion
         suggestionList.setOnMouseClicked(e -> {
             String selected = suggestionList.getSelectionModel().getSelectedItem();
 
@@ -129,7 +137,10 @@ public class Main extends Application {
                 String current = inputField.getText();
 
                 if (current.contains(" ")) {
-                    inputField.setText(current + " " + selected);
+                    // replace last word only
+                    int lastSpace = current.lastIndexOf(" ");
+                    String newText = current.substring(0, lastSpace + 1) + selected;
+                    inputField.setText(newText);
                 } else {
                     inputField.setText(selected);
                 }
@@ -138,7 +149,7 @@ public class Main extends Application {
             }
         });
 
-        // Layout
+        // 🧩 Layout
         VBox layout = new VBox(10,
                 title,
                 inputLabel,
@@ -162,7 +173,7 @@ public class Main extends Application {
         stage.show();
     }
 
-    // Sentence generator
+    // 🧠 Sentence generator
     private void generateSentenceRealtime(String input) {
 
         new Thread(() -> {

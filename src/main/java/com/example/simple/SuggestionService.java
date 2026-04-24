@@ -75,4 +75,38 @@ public class SuggestionService {
 
         return suggestions;
     }
+
+    public static List<String> getFilteredNextWordSuggestions(String prevWord, String prefix) {
+        List<String> suggestions = new ArrayList<>();
+
+        String query = """
+        SELECT w2.word_text
+        FROM word_follows wf
+        JOIN word w1 ON wf.word_id = w1.id
+        JOIN word w2 ON wf.next_word_id = w2.id
+        WHERE LOWER(w1.word_text) = ?
+        AND LOWER(w2.word_text) LIKE ?
+        ORDER BY wf.follow_count DESC
+        LIMIT 5
+    """;
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, prevWord.toLowerCase());
+            stmt.setString(2, prefix.toLowerCase() + "%");
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                suggestions.add(rs.getString("word_text"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return suggestions;
+    }
+
 }
