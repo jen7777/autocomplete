@@ -52,7 +52,7 @@ public class Controller {
         new Thread(() -> {
             List<String> results;
 
-            // 🔤 First word → prefix search
+            // First word → prefix search
             if (!input.contains(" ")) {
                 results = SuggestionService.getPrefixSuggestions(input);
             }
